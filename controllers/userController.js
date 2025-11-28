@@ -78,3 +78,16 @@ export const deleteUser = async(req,res)=>{
     }
   
 }
+
+export const searchUser= async(req,res)=>{
+   try {
+    const {name} = req.query
+
+    const users = await phonebookUser.find({
+        name:{$regex:name,$option:i}
+    })
+    res.status(200).send(users)
+   } catch (error) {
+    res.status(500).send(error.message)
+   }
+}
