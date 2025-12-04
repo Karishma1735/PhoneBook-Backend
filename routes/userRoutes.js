@@ -1,15 +1,16 @@
 import express from 'express'
-import { createUser, deleteUser, getAllUser, getUserbyId, searchUser, updateuser} from '../controllers/userController.js'
-import { imgUpload } from '../auth.js/uploads.js'
+import { createUser, deleteUser, filterBylabel, getAllUser, getUserbyId, searchUser, updateuser} from '../controllers/userController.js'
+import { upload } from '../middleware/uploads.js'
 
 const router = express.Router()
 
-router.post('/user',imgUpload.single('file'),createUser)
+router.post('/user', upload.single('image'),createUser)
 router.get('/allusers',getAllUser)
 router.get('/allusers/:id',getUserbyId)
-router.put('/edituser/:id',updateuser)
+router.put('/edituser/:id',upload.single('image'),updateuser)
 router.delete('/deleteusers/:id',deleteUser)
-router.get('/search/:name',searchUser)
+router.get('/search',searchUser)
+router.get('/filter' , filterBylabel)
 export default router;
 
 

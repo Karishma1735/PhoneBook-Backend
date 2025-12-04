@@ -1,37 +1,36 @@
 import phonebookUser from "../model/userModel.js";
+import { createUserService, deleteUserService, getAllUserService, getUserbyIdService, getUsersByLabelService, searchUserService, updateUserService } from "../services/userService.js";
 
 
 export const createUser = async(req,res)=>{
-    const {name,contact,adress,label} = req.body||{}
+    const {name,contact,adress,label,image} = req.body||{}
     try {
-        if(!name||!contact||!adress){
+        if(!name||!contact){
             res.status(400).send("All fields are required")
         }
-         const image = req.file?req.file.filename:null
-        const newUser = new phonebookUser({name,contact,adress,label,image})
-        newUser.save()
-        res.status(200).send(newUser)
+
+       const newUser = await createUserService(req.body, req.file);
+       res.status(200).send(newUser)
     } catch (error) {
         res.status(500).send(error.message)
         
     }
 }
 
-export const getAllUser = async(req,res)=>{
+export const getAllUser = async (req, res) => {
     try {
-        const users = await phonebookUser.find({})
-    res.status(200).json(users)
+        const users = await getAllUserService();
+        res.status(200).json(users);
     } catch (error) {
-        res.status(404).send("Error fetching users")
-        
+        res.status(500).send("Error fetching users");
     }
-    
-}
+};
 
 
 export const getUserbyId = async(req,res)=>{
     try {
-        const user = await phonebookUser.findById(req.params.id)
+          const { id } = req.params;
+        const user = await getUserbyIdService(id)
         if(!user){
             res.status(400).send("User not found")
         }
@@ -44,50 +43,51 @@ export const getUserbyId = async(req,res)=>{
 
 export const updateuser = async(req,res)=>{
     try {
-        const {name,contact,adress,label} = req.body
-        const updateduser = {}
-        if(name) updateduser.name = name
-        if(contact) updateduser.contact= contact
-        if(adress) updateduser.adress = adress
-        if(label) updateduser.label = label
-
-        const updatedData = await phonebookUser.findByIdAndUpdate(
-            req.params.id,
-            updateduser,
-            {new:true}
-        )
-
-        res.status(200).send(updatedData)
-
+      const updateData = await updateUserService(req.params.id , req.body,req.file)
+        res.status(200).send(updateData)
 
     } catch (error) {
         res.status(404).send("Error updating user")
-        
     }
 }
 
-export const deleteUser = async(req,res)=>{
+export const deleteUser = async (req, res) => {
     try {
-          const user = await phonebookUser.findByIdAndDelete(req.params.id)
-    if(!user){
-        res.status(404).send("Unable to find user")
-    }
-    res.status(200).send("User deleted successfully")
+        const userId = req.params.id;
+        const user = await deleteUserService(userId);
+
+        if (!user) {
+            return res.status(404).send("Unable to find user");
+        }
+
+        res.status(200).send("User deleted successfully");
     } catch (error) {
-        res.status(400).send("Error deleting user")
+        console.error(error);
+        res.status(400).send(error.message);
     }
-  
-}
+};
 
-export const searchUser= async(req,res)=>{
-   try {
-    const {name} = req.query
 
-    const users = await phonebookUser.find({
-        name:{$regex:name,$option:i}
-    })
-    res.status(200).send(users)
-   } catch (error) {
-    res.status(500).send(error.message)
-   }
+export const searchUser = async (req, res) => {
+  try {
+    const { name } = req.query;
+    const users = await searchUserService(name);
+    if (users.length === 0) {
+      return res.status(404).send("No users found." );
+    }
+
+    res.status(200).send(users);
+  } catch (error) {
+    res.status(500).send("Error searching searchUser:", error);
+  }
+};
+
+export const filterBylabel = async(req,res)=>{
+    try {
+        const {label} = req.query;
+        const users = await getUsersByLabelService(label)
+        return res.status(200).send(users)
+    } catch (error) {
+        res.status(500).send("Error filter by label:", error);
+    }
 }
