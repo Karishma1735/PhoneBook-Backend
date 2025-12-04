@@ -1,13 +1,10 @@
 import phonebookUser from "../model/userModel.js";
-import { createUserService, deleteUserService, getAllUserService, getUserbyIdService, getUsersByLabelService, searchUserService, updateUserService } from "../services/userService.js";
+import { createUserService, deleteUserService, getAllUserService, getUserbyIdService, getUsersByLabelService, paginationService, searchUserService, toggleBookmarkService, updateUserService } from "../services/userService.js";
 
 
 export const createUser = async(req,res)=>{
     const {name,contact,adress,label,image} = req.body||{}
     try {
-        if(!name||!contact){
-            res.status(400).send("All fields are required")
-        }
 
        const newUser = await createUserService(req.body, req.file);
        res.status(200).send(newUser)
@@ -22,7 +19,9 @@ export const getAllUser = async (req, res) => {
         const users = await getAllUserService();
         res.status(200).json(users);
     } catch (error) {
-        res.status(500).send("Error fetching users");
+        res.status(500).send({
+            message:"Error fetching users",
+        });
     }
 };
 
@@ -36,7 +35,9 @@ export const getUserbyId = async(req,res)=>{
         }
         res.status(200).send(user)
     } catch (error) {
-        res.status(500).send("Error fetching user")
+        res.status(500).send({
+            message:"Error Fetching user"
+        })
         
     }
 }
@@ -60,7 +61,10 @@ export const deleteUser = async (req, res) => {
             return res.status(404).send("Unable to find user");
         }
 
-        res.status(200).send("User deleted successfully");
+          res.status(200).send({
+            message: "User deleted successfully",
+            user: user 
+        });
     } catch (error) {
         console.error(error);
         res.status(400).send(error.message);
@@ -78,7 +82,9 @@ export const searchUser = async (req, res) => {
 
     res.status(200).send(users);
   } catch (error) {
-    res.status(500).send("Error searching searchUser:", error);
+    res.status(500).send({
+        message:"Error searching user"
+    });
   }
 };
 
@@ -91,3 +97,41 @@ export const filterBylabel = async(req,res)=>{
         res.status(500).send("Error filter by label:", error);
     }
 }
+
+export const toggleBookmark = async(req,res) =>{
+    try {
+        const {id} = req.params
+        const updatedBookmark = await toggleBookmarkService(id)
+        res.status(200).send({
+            message:"Bookmark updated successfully",
+            updatedBookmark:updatedBookmark
+        })
+
+        
+    } catch (error) {
+        res.status(500).send("Unable to toggle bookmark")
+        
+    }
+}
+
+export const pagination = async (req, res) => {
+  try {
+
+    const result = await paginationService(req);
+
+    return res.status(200).send({
+      success: true,
+      currentPage: result.currentPage,
+      totalPages: result.totalPages,
+      totalCount: result.totalCount,
+      data: result.data,
+    });
+  } catch (error) {
+    console.error("Pagination service error:", error);
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+

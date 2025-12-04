@@ -29,20 +29,22 @@ export const createUserService = async (data, file) => {
 
 
 
-export const getAllUserService = async ()=>{
-    try {
-        return await phonebookUser.find({})
-    } catch (error) {
-        throw new error("Error fetching all users")
-    }
-}
+export const getAllUserService = async () => {
+  try {
+    const count = await phonebookUser.countDocuments({});
+    const users = await phonebookUser.find({});
+    return {
+      count,
+      data: users,
+    };
+  } catch (error) {
+    throw new Error("Error fetching all users");
+  }
+};
+
 
 export const getUserbyIdService = async (id)=>{
     try {
-
-        if (user.imageId) {
-      await cloudinary.v2.uploader.destroy(user.imageId);
-    }
         return await phonebookUser.findById(id)
     } catch (error) {
         throw new error("Error fetching  User By id")
@@ -57,22 +59,27 @@ export const deleteUserService = async (id) => {
       const imageUrlParts = user.image.split('/');
       const imageId = imageUrlParts[imageUrlParts.length - 1].split('.')[0]; 
       await cloudinary.v2.uploader.destroy(imageId);
-      //   await handleImageUploadAndDelete(user.image, null); 
-    }
 
+    }
     return await phonebookUser.findByIdAndDelete(id);
   } catch (error) {
     throw new Error(`Error deleting user: ${error.message}`);
   }
 };
 
-
 export const updateUserService = async (id, updateData, file) => {
   try {
     const user = await phonebookUser.findById(id);
     if (!user) throw new Error("User not found");
 
-    const imageUrl = await handleImageUploadAndDelete(user.image, file);
+    let imageUrl = user.image;
+    if (!user.image && file) {
+      imageUrl = await handleImageUploadAndDelete(null, file);
+    } 
+
+    else if (file) {
+      imageUrl = await handleImageUploadAndDelete(user.image, file);
+    }
     const updatedUser = await phonebookUser.findByIdAndUpdate(
       id,
       { ...updateData, image: imageUrl },
@@ -85,14 +92,22 @@ export const updateUserService = async (id, updateData, file) => {
   }
 };
 
+
 export const searchUserService = async (name) => {
   if (!name || name.trim().length === 0) {
     throw new Error("Search name is required.");
   }
   try {
-    return await phonebookUser.find({
-      name: { $regex: name, $options: 'i' } 
+    const count = await phonebookUser.countDocuments({
+      name: { $regex: name, $options: "i" },
     });
+    const users = await phonebookUser.find({
+      name: { $regex: name, $options: "i" },
+    });
+    return {
+      count,
+      data: users,
+    };
   } catch (error) {
     throw new Error(error.message);
   }
@@ -101,25 +116,31 @@ export const searchUserService = async (name) => {
 
 export const getUsersByLabelService = async (label) => {
   try {
-    const validLabels = ['Work', 'Friend', 'Family'];
+    const validLabels = ["Work", "Friend", "Family"];
     if (!validLabels.includes(label)) {
-throw new Error('Invalid label');
+      throw new Error("Invalid label");
     }
-    return await phonebookUser.find({ label });
 
+    const count = await phonebookUser.countDocuments({ label });
+    const users = await phonebookUser.find({ label });
+
+    return {
+      count,
+      data: users,
+    };
   } catch (error) {
-    throw new Error(`Error fetching ${error.message}`);
+    throw new Error(`Error fetching users by label: ${error.message}`);
   }
 };
 
 
-export const toggleBookmark = async (id) => {
+
+export const toggleBookmarkService = async (id) => {
     try {
         const contact = await phonebookUser.findById(id);
         if (!contact) {
             throw new Error('Contact not found');
         }
-
         contact.bookmark = !contact.bookmark;
         await contact.save();
         return contact;
@@ -129,6 +150,32 @@ export const toggleBookmark = async (id) => {
 };
 
 
+export const paginationService = async (req) => {
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 10;
+
+  const lastIndex = page * limit;
+  const startIndex = lastIndex - limit;
+
+  try {
+    const count = await phonebookUser.countDocuments();
+    const users = await phonebookUser.find()
+      .skip(startIndex)
+      .limit(limit)
+
+      
+    const totalPages = Math.ceil(count / limit);
+
+    return {
+      currentPage: page,
+      totalPages,
+      totalCount: count,
+      data: users,
+    };
+  } catch (error) {
+    throw new Error(`Error with pagination: ${error.message}`);
+  }
+};
 
 
 

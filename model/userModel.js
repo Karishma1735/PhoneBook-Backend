@@ -13,7 +13,7 @@ const phonebookSchema = new mongoose.Schema({
             validator: function(value) {
                 return /^\d{10}$/.test(value);
             },
-            message: 'Contact number must be a valid numberb of 10 digits .',
+            message: 'Contact number must be a valid number of 10 digits .',
         },
     },
     adress: {
@@ -23,7 +23,7 @@ const phonebookSchema = new mongoose.Schema({
         type: String,
         enum: {
             values: ['Work', 'Friend', 'Family'],
-            message: (props) => `${props.value} is not a valid label". PLease enter valid label`,
+            message: (props) => `${props.value} is not a valid label". PLease enter valid label from Work , Family , Friend`,
         },
         default: 'Friend',
     },
