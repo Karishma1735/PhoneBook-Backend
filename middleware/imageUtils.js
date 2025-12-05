@@ -16,3 +16,16 @@ export const handleImageUploadAndDelete = async (currentImageUrl, newImage) => {
 
   return imageUrl;
 };
+
+
+
+export const deleteImageFromCloudinary = async (imageUrl) => {
+  try {
+    const imageUrlParts = imageUrl.split('/');
+    const imageId = imageUrlParts[imageUrlParts.length - 1].split('.')[0]; 
+    await cloudinary.v2.uploader.destroy(imageId);
+  } catch (error) {
+    throw new Error(`Error deleting image: ${error.message}`);
+  }
+};
+

@@ -1,5 +1,5 @@
 import phonebookUser from "../model/userModel.js";
-import { createUserService, deleteUserService, getAllUserService, getUserbyIdService, getUsersByLabelService, paginationService, searchUserService, toggleBookmarkService, updateUserService } from "../services/userService.js";
+import { createUserService, deleteUserService, getAllUserService, getUsersByLabelService, paginationService, searchUserService, toggleBookmarkService, updateUserService } from "../services/userService.js";
 
 
 export const createUser = async(req,res)=>{
@@ -14,33 +14,50 @@ export const createUser = async(req,res)=>{
     }
 }
 
+// export const getAllUser = async (req, res) => {
+//     try {
+//         const users = await getAllUserService();
+//         res.status(200).json(users);
+//     } catch (error) {
+//         res.status(500).send({
+//             message:"Error fetching users",
+//         });
+//     }
+// };
+
+
 export const getAllUser = async (req, res) => {
-    try {
-        const users = await getAllUserService();
-        res.status(200).json(users);
-    } catch (error) {
-        res.status(500).send({
-            message:"Error fetching users",
-        });
+  try {
+    const { id } = req.params;
+    const users = await getAllUserService(id);
+
+    if (users) {
+      return res.status(200).json(users);
+    } else {
+      return res.status(404).json({ message: "User not found" });
     }
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: "Error fetching user(s)" });
+  }
 };
 
 
-export const getUserbyId = async(req,res)=>{
-    try {
-          const { id } = req.params;
-        const user = await getUserbyIdService(id)
-        if(!user){
-            res.status(400).send("User not found")
-        }
-        res.status(200).send(user)
-    } catch (error) {
-        res.status(500).send({
-            message:"Error Fetching user"
-        })
+// export const getUserbyId = async(req,res)=>{
+//     try {
+//           const { id } = req.params;
+//         const user = await getUserbyIdService(id)
+//         if(!user){
+//             res.status(400).send("User not found")
+//         }
+//         res.status(200).send(user)
+//     } catch (error) {
+//         res.status(500).send({
+//             message:"Error Fetching user"
+//         })
         
-    }
-}
+//     }
+// }
 
 export const updateuser = async(req,res)=>{
     try {
@@ -48,7 +65,10 @@ export const updateuser = async(req,res)=>{
         res.status(200).send(updateData)
 
     } catch (error) {
-        res.status(404).send("Error updating user")
+        res.status(404).send({
+            message:"Error updating users",
+            error:error.message
+        })
     }
 }
 

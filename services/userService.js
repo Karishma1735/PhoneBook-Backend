@@ -1,5 +1,5 @@
 import cloudinary from "../middleware/cloudinary.js";
-import { handleImageUploadAndDelete } from "../middleware/imageUtils.js";
+import { deleteImageFromCloudinary, handleImageUploadAndDelete } from "../middleware/imageUtils.js";
 import phonebookUser from "../model/userModel.js";
 import fs from 'fs'
 
@@ -29,36 +29,56 @@ export const createUserService = async (data, file) => {
 
 
 
-export const getAllUserService = async () => {
-  try {
-    const count = await phonebookUser.countDocuments({});
-    const users = await phonebookUser.find({});
-    return {
-      count,
-      data: users,
-    };
+// export const getAllUserService = async () => {
+//   try {
+//     const count = await phonebookUser.countDocuments({});
+//     const users = await phonebookUser.find({});
+//     return {
+//       count,
+//       data: users,
+//     };
+//   } catch (error) {
+//     throw new Error("Error fetching all users");
+//   }
+// };
+export const getAllUserService = async (id) => {
+try {
+  console.log(id);
+  
+    if (id) {
+      return await phonebookUser.findById(id);
+    } else {
+      const count = await phonebookUser.countDocuments({});
+      const users = await phonebookUser.find({});
+      return {
+        count,
+        data: users,
+      };
+    }
   } catch (error) {
-    throw new Error("Error fetching all users");
+    throw new Error("Error fetching user(s)");
   }
 };
 
 
-export const getUserbyIdService = async (id)=>{
-    try {
-        return await phonebookUser.findById(id)
-    } catch (error) {
-        throw new error("Error fetching  User By id")
-    }
-}
+// export const getUserbyIdService = async (id)=>{
+//     try {
+//         return await phonebookUser.findById(id)
+//     } catch (error) {
+//         throw new error("Error fetching  User By id")
+//     }
+// }
 
 export const deleteUserService = async (id) => {
   try {
     const user = await phonebookUser.findById(id);
     if (!user) throw new Error("User not found");
     if (user.image) {
-      const imageUrlParts = user.image.split('/');
-      const imageId = imageUrlParts[imageUrlParts.length - 1].split('.')[0]; 
-      await cloudinary.v2.uploader.destroy(imageId);
+      // const imageUrlParts = user.image.split('/');
+      // const imageId = imageUrlParts[imageUrlParts.length - 1].split('.')[0]; 
+      // await cloudinary.v2.uploader.destroy(imageId);
+
+      await deleteImageFromCloudinary(user.image)
 
     }
     return await phonebookUser.findByIdAndDelete(id);
@@ -67,31 +87,37 @@ export const deleteUserService = async (id) => {
   }
 };
 
+
 export const updateUserService = async (id, updateData, file) => {
   try {
     const user = await phonebookUser.findById(id);
     if (!user) throw new Error("User not found");
-
     let imageUrl = user.image;
-    if (!user.image && file) {
-      imageUrl = await handleImageUploadAndDelete(null, file);
-    } 
+    if (!file && (updateData.image === null || updateData.image === "")) {
+      if (user.image) {
+        // const parts = user.image.split("/");
+        // const publicId = parts[parts.length - 1].split(".")[0];
+        // await cloudinary.v2.uploader.destroy(publicId);
 
-    else if (file) {
+        await deleteImageFromCloudinary(user.image)
+      }
+      imageUrl = null;
+    } else if (file) {
       imageUrl = await handleImageUploadAndDelete(user.image, file);
     }
     const updatedUser = await phonebookUser.findByIdAndUpdate(
       id,
       { ...updateData, image: imageUrl },
-      { new: true }
+      {
+        new: true,
+        runValidators: true,
+      }
     );
-
     return updatedUser;
-  } catch (error) {
-    throw new Error(error.message);
+  } catch (err) {
+    throw new Error(err.message);
   }
 };
-
 
 export const searchUserService = async (name) => {
   if (!name || name.trim().length === 0) {

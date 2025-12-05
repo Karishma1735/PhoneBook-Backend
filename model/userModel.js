@@ -6,15 +6,18 @@ const phonebookSchema = new mongoose.Schema({
         required: [true, 'Name is required.'],
     },
     contact: {
-        type: Number,
+        type: String,
         required: [true, 'Contact  is required.'],
         unique: [true, 'Please enter unique contact number !!!Current number already exists.'],
+        
         validate: {
             validator: function(value) {
                 return /^\d{10}$/.test(value);
             },
             message: 'Contact number must be a valid number of 10 digits .',
         },
+
+
     },
     adress: {
         type: String,
@@ -25,7 +28,6 @@ const phonebookSchema = new mongoose.Schema({
             values: ['Work', 'Friend', 'Family'],
             message: (props) => `${props.value} is not a valid label". PLease enter valid label from Work , Family , Friend`,
         },
-        default: 'Friend',
     },
     image: {
         type: String,
@@ -41,7 +43,9 @@ phonebookSchema.post('save', (error, doci, next) => {
     if (error.name === 'ValidationError') {
         const messages = Object.values(error.errors).map((err) => err.message);
         next(new Error(messages.join(', ')));
-    } else {
+    }
+    
+    else {
         next(error);
     }
 });
