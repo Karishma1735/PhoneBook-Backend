@@ -1,5 +1,5 @@
 import phonebookUser from "../model/userModel.js";
-import { createUserService, deleteUserService, getAllUserService, getUsersByLabelService, paginationService, searchUserService, toggleBookmarkService, updateUserService } from "../services/userService.js";
+import { createUserService, deleteUserService, getAllUserService, getUsersByLabelService, paginationService, searchUserService, updateUserOrToggleBookmarkService } from "../services/userService.js";
 
 
 export const createUser = async(req,res)=>{
@@ -14,21 +14,9 @@ export const createUser = async(req,res)=>{
     }
 }
 
-// export const getAllUser = async (req, res) => {
-//     try {
-//         const users = await getAllUserService();
-//         res.status(200).json(users);
-//     } catch (error) {
-//         res.status(500).send({
-//             message:"Error fetching users",
-//         });
-//     }
-// };
-
-
 export const getAllUser = async (req, res) => {
   try {
-    const { id } = req.params;
+    const { id } = req.query;
     const users = await getAllUserService(id);
 
     if (users) {
@@ -42,35 +30,43 @@ export const getAllUser = async (req, res) => {
   }
 };
 
-
-// export const getUserbyId = async(req,res)=>{
+// export const updateuser = async(req,res)=>{
 //     try {
-//           const { id } = req.params;
-//         const user = await getUserbyIdService(id)
-//         if(!user){
-//             res.status(400).send("User not found")
-//         }
-//         res.status(200).send(user)
+//       const updateData = await updateUserService(req.params.id , req.body,req.file)
+//         res.status(200).send(updateData)
+
 //     } catch (error) {
-//         res.status(500).send({
-//             message:"Error Fetching user"
+//         res.status(404).send({
+//             message:"Error updating users",
+//             error:error.message
 //         })
-        
 //     }
 // }
 
-export const updateuser = async(req,res)=>{
+export const updateUserOrToggleBookmarkController = async (req, res) => {
     try {
-      const updateData = await updateUserService(req.params.id , req.body,req.file)
-        res.status(200).send(updateData)
+        const { id } = req.params;
+        const { toggleBookmark } = req.query;
 
+        if (toggleBookmark === 'true') {
+            const updatedBookmark = await updateUserOrToggleBookmarkService(id, null, null, true);
+            return res.status(200).send({
+                message: "Bookmark updated successfully",
+                updatedBookmark: updatedBookmark
+            });
+        }
+        const updateData = await updateUserOrToggleBookmarkService(id, req.body, req.file);
+        return res.status(200).send({
+            message: "User updated successfully",
+            updatedUser: updateData
+        });
     } catch (error) {
-        res.status(404).send({
-            message:"Error updating users",
-            error:error.message
-        })
+        return res.status(500).send({
+            message: "Error processing the request",
+            error: error.message
+        });
     }
-}
+};
 
 export const deleteUser = async (req, res) => {
     try {
@@ -118,21 +114,21 @@ export const filterBylabel = async(req,res)=>{
     }
 }
 
-export const toggleBookmark = async(req,res) =>{
-    try {
-        const {id} = req.params
-        const updatedBookmark = await toggleBookmarkService(id)
-        res.status(200).send({
-            message:"Bookmark updated successfully",
-            updatedBookmark:updatedBookmark
-        })
+// export const toggleBookmark = async(req,res) =>{
+//     try {
+//         const {id} = req.params
+//         const updatedBookmark = await toggleBookmarkService(id)
+//         res.status(200).send({
+//             message:"Bookmark updated successfully",
+//             updatedBookmark:updatedBookmark
+//         })
 
         
-    } catch (error) {
-        res.status(500).send("Unable to toggle bookmark")
+//     } catch (error) {
+//         res.status(500).send("Unable to toggle bookmark")
         
-    }
-}
+//     }
+// }
 
 export const pagination = async (req, res) => {
   try {

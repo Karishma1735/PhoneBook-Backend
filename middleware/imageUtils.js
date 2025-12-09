@@ -1,4 +1,5 @@
 
+import fs from "fs";
 import cloudinary from "../middleware/cloudinary.js";
 
 export const handleImageUploadAndDelete = async (currentImageUrl, newImage) => {
@@ -12,6 +13,13 @@ export const handleImageUploadAndDelete = async (currentImageUrl, newImage) => {
 
     const result = await cloudinary.v2.uploader.upload(newImage.path);
     imageUrl = result.secure_url; 
+
+     try {
+      fs.unlinkSync(newImage.path); 
+      console.log(`Local file  deleted.`);
+    } catch (err) {
+      console.error(`Error deleting local file:`, err);
+    }
   }
 
   return imageUrl;

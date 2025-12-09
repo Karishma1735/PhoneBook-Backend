@@ -27,20 +27,6 @@ export const createUserService = async (data, file) => {
   }
 };
 
-
-
-// export const getAllUserService = async () => {
-//   try {
-//     const count = await phonebookUser.countDocuments({});
-//     const users = await phonebookUser.find({});
-//     return {
-//       count,
-//       data: users,
-//     };
-//   } catch (error) {
-//     throw new Error("Error fetching all users");
-//   }
-// };
 export const getAllUserService = async (id) => {
 try {
   console.log(id);
@@ -61,23 +47,11 @@ try {
 };
 
 
-// export const getUserbyIdService = async (id)=>{
-//     try {
-//         return await phonebookUser.findById(id)
-//     } catch (error) {
-//         throw new error("Error fetching  User By id")
-//     }
-// }
-
 export const deleteUserService = async (id) => {
   try {
     const user = await phonebookUser.findById(id);
     if (!user) throw new Error("User not found");
     if (user.image) {
-      // const imageUrlParts = user.image.split('/');
-      // const imageId = imageUrlParts[imageUrlParts.length - 1].split('.')[0]; 
-      // await cloudinary.v2.uploader.destroy(imageId);
-
       await deleteImageFromCloudinary(user.image)
 
     }
@@ -86,38 +60,69 @@ export const deleteUserService = async (id) => {
     throw new Error(`Error deleting user: ${error.message}`);
   }
 };
+export const updateUserOrToggleBookmarkService = async (id, updateData, file, toggleBookmark = false) => {
+    try {
+        const user = await phonebookUser.findById(id);
+        if (!user) throw new Error("User not found");
 
+        if (toggleBookmark) {
+            user.bookmark = !user.bookmark;
+            await user.save();
+            return user; 
+        }
 
-export const updateUserService = async (id, updateData, file) => {
-  try {
-    const user = await phonebookUser.findById(id);
-    if (!user) throw new Error("User not found");
-    let imageUrl = user.image;
-    if (!file && (updateData.image === null || updateData.image === "")) {
-      if (user.image) {
-        // const parts = user.image.split("/");
-        // const publicId = parts[parts.length - 1].split(".")[0];
-        // await cloudinary.v2.uploader.destroy(publicId);
+        let imageUrl = user.image;
+        if (!file && (updateData.image === null || updateData.image === "")) {
+            if (user.image) {
+                await deleteImageFromCloudinary(user.image); 
+            }
+            imageUrl = null; 
+        } else if (file) {
+            imageUrl = await handleImageUploadAndDelete(user.image, file); 
+        }
 
-        await deleteImageFromCloudinary(user.image)
-      }
-      imageUrl = null;
-    } else if (file) {
-      imageUrl = await handleImageUploadAndDelete(user.image, file);
+        const updatedUser = await phonebookUser.findByIdAndUpdate(
+            id,
+            { ...updateData, image: imageUrl },
+            {
+                new: true,
+                runValidators: true,
+            }
+        );
+
+        return updatedUser;
+    } catch (err) {
+        throw new Error(err.message);
     }
-    const updatedUser = await phonebookUser.findByIdAndUpdate(
-      id,
-      { ...updateData, image: imageUrl },
-      {
-        new: true,
-        runValidators: true,
-      }
-    );
-    return updatedUser;
-  } catch (err) {
-    throw new Error(err.message);
-  }
 };
+
+
+// export const updateUserService = async (id, updateData, file) => {
+//   try {
+//     const user = await phonebookUser.findById(id);
+//     if (!user) throw new Error("User not found");
+//     let imageUrl = user.image;
+//     if (!file && (updateData.image === null || updateData.image === "")) {
+//       if (user.image) {
+//         await deleteImageFromCloudinary(user.image)
+//       }
+//       imageUrl = null;
+//     } else if (file) {
+//       imageUrl = await handleImageUploadAndDelete(user.image, file);
+//     }
+//     const updatedUser = await phonebookUser.findByIdAndUpdate(
+//       id,
+//       { ...updateData, image: imageUrl },
+//       {
+//         new: true,
+//         runValidators: true,
+//       }
+//     );
+//     return updatedUser;
+//   } catch (err) {
+//     throw new Error(err.message);
+//   }
+// };
 
 export const searchUserService = async (name) => {
   if (!name || name.trim().length === 0) {
@@ -161,19 +166,19 @@ export const getUsersByLabelService = async (label) => {
 
 
 
-export const toggleBookmarkService = async (id) => {
-    try {
-        const contact = await phonebookUser.findById(id);
-        if (!contact) {
-            throw new Error('Contact not found');
-        }
-        contact.bookmark = !contact.bookmark;
-        await contact.save();
-        return contact;
-    } catch (error) {
-        throw new Error(error.message);
-    }
-};
+// export const toggleBookmarkService = async (id) => {
+//     try {
+//         const contact = await phonebookUser.findById(id);
+//         if (!contact) {
+//             throw new Error('Contact not found');
+//         }
+//         contact.bookmark = !contact.bookmark;
+//         await contact.save();
+//         return contact;
+//     } catch (error) {
+//         throw new Error(error.message);
+//     }
+// };
 
 
 export const paginationService = async (req) => {
