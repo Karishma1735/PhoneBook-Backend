@@ -1,47 +1,39 @@
 import phonebookUser from "../model/userModel.js";
-import { createUserService, deleteUserService, getAllUserService, getUsersByLabelService, paginationService, searchUserService, updateUserOrToggleBookmarkService } from "../services/userService.js";
+import { createUserService, deleteUserService, getAllUserService, paginationService, updateUserOrToggleBookmarkService } from "../services/userService.js";
 
+export const createUser = async (req, res) => {
+  const { name, contact, adress, label, image } = req.body || {};
 
-export const createUser = async(req,res)=>{
-    const {name,contact,adress,label,image} = req.body||{}
-    try {
+  const allowedFields = ['name', 'contact', 'adress', 'label', 'image'];
+  const invalidFields = Object.keys(req.body).filter(key => !allowedFields.includes(key));
 
-       const newUser = await createUserService(req.body, req.file);
-       res.status(200).send(newUser)
-    } catch (error) {
-        res.status(500).send(error.message)
-        
-    }
-}
+  if (invalidFields.length > 0) {
+    return res.status(400).send(`Invalid fields: ${invalidFields}`);
+  }
+
+  try {
+    const newUser = await createUserService(req.body, req.file);
+    res.status(200).send(newUser);
+  } catch (error) {
+    res.status(500).send(error.message);
+  }
+};
 
 export const getAllUser = async (req, res) => {
   try {
-    const { id } = req.query;
-    const users = await getAllUserService(id);
+    const { id, name, label } = req.query;
+    const users = await getAllUserService({ id, name, label });
 
     if (users) {
       return res.status(200).json(users);
     } else {
-      return res.status(404).json({ message: "User not found" });
+      return res.status(404).json({ message: "User(s) not found" });
     }
   } catch (error) {
     console.error(error);
-    return res.status(500).json({ message: "Error fetching user(s)" });
+    return res.status(500).json({ message: "Error fetching user(s)", error: error.message });
   }
 };
-
-// export const updateuser = async(req,res)=>{
-//     try {
-//       const updateData = await updateUserService(req.params.id , req.body,req.file)
-//         res.status(200).send(updateData)
-
-//     } catch (error) {
-//         res.status(404).send({
-//             message:"Error updating users",
-//             error:error.message
-//         })
-//     }
-// }
 
 export const updateUserOrToggleBookmarkController = async (req, res) => {
     try {
@@ -79,56 +71,13 @@ export const deleteUser = async (req, res) => {
 
           res.status(200).send({
             message: "User deleted successfully",
-            user: user 
+            user: user.name
         });
     } catch (error) {
         console.error(error);
         res.status(400).send(error.message);
     }
 };
-
-
-export const searchUser = async (req, res) => {
-  try {
-    const { name } = req.query;
-    const users = await searchUserService(name);
-    if (users.length === 0) {
-      return res.status(404).send("No users found." );
-    }
-
-    res.status(200).send(users);
-  } catch (error) {
-    res.status(500).send({
-        message:"Error searching user"
-    });
-  }
-};
-
-export const filterBylabel = async(req,res)=>{
-    try {
-        const {label} = req.query;
-        const users = await getUsersByLabelService(label)
-        return res.status(200).send(users)
-    } catch (error) {
-        res.status(500).send("Error filter by label:", error);
-    }
-}
-
-// export const toggleBookmark = async(req,res) =>{
-//     try {
-//         const {id} = req.params
-//         const updatedBookmark = await toggleBookmarkService(id)
-//         res.status(200).send({
-//             message:"Bookmark updated successfully",
-//             updatedBookmark:updatedBookmark
-//         })
-
-        
-//     } catch (error) {
-//         res.status(500).send("Unable to toggle bookmark")
-        
-//     }
-// }
 
 export const pagination = async (req, res) => {
   try {

@@ -26,26 +26,36 @@ export const createUserService = async (data, file) => {
     throw new Error(error.message);
   }
 };
+export const getAllUserService = async (query) => {
+  try {
+    const searchQuery = {};
 
-export const getAllUserService = async (id) => {
-try {
-  console.log(id);
-  
-    if (id) {
-      return await phonebookUser.findById(id);
-    } else {
-      const count = await phonebookUser.countDocuments({});
-      const users = await phonebookUser.find({});
-      return {
-        count,
-        data: users,
-      };
+    if (query.id) {
+      searchQuery._id = query.id;
     }
+
+    if (query.name) {
+      searchQuery.name = { $regex: query.name, $options: "i" };
+    }
+
+    if (query.label) {
+      const validLabels = ["Work", "Friend", "Family"];
+      if (!validLabels.includes(query.label)) {
+        throw new Error("Invalid label");
+      }
+      searchQuery.label = query.label;
+    }
+    const count = await phonebookUser.countDocuments(searchQuery);
+    const users = await phonebookUser.find(searchQuery);
+
+    return {
+      count,
+      data: users,
+    };
   } catch (error) {
-    throw new Error("Error fetching user(s)");
+    throw new Error(`Error fetching user(s): ${error.message}`);
   }
 };
-
 
 export const deleteUserService = async (id) => {
   try {
@@ -70,7 +80,7 @@ export const updateUserOrToggleBookmarkService = async (id, updateData, file, to
             await user.save();
             return user; 
         }
-
+        const { bookmark, ...filteredUpdateData } = updateData;
         let imageUrl = user.image;
         if (!file && (updateData.image === null || updateData.image === "")) {
             if (user.image) {
@@ -83,7 +93,7 @@ export const updateUserOrToggleBookmarkService = async (id, updateData, file, to
 
         const updatedUser = await phonebookUser.findByIdAndUpdate(
             id,
-            { ...updateData, image: imageUrl },
+            { ...filteredUpdateData, image: imageUrl },
             {
                 new: true,
                 runValidators: true,
@@ -96,118 +106,29 @@ export const updateUserOrToggleBookmarkService = async (id, updateData, file, to
     }
 };
 
-
-// export const updateUserService = async (id, updateData, file) => {
-//   try {
-//     const user = await phonebookUser.findById(id);
-//     if (!user) throw new Error("User not found");
-//     let imageUrl = user.image;
-//     if (!file && (updateData.image === null || updateData.image === "")) {
-//       if (user.image) {
-//         await deleteImageFromCloudinary(user.image)
-//       }
-//       imageUrl = null;
-//     } else if (file) {
-//       imageUrl = await handleImageUploadAndDelete(user.image, file);
-//     }
-//     const updatedUser = await phonebookUser.findByIdAndUpdate(
-//       id,
-//       { ...updateData, image: imageUrl },
-//       {
-//         new: true,
-//         runValidators: true,
-//       }
-//     );
-//     return updatedUser;
-//   } catch (err) {
-//     throw new Error(err.message);
-//   }
-// };
-
-export const searchUserService = async (name) => {
-  if (!name || name.trim().length === 0) {
-    throw new Error("Search name is required.");
-  }
-  try {
-    const count = await phonebookUser.countDocuments({
-      name: { $regex: name, $options: "i" },
-    });
-    const users = await phonebookUser.find({
-      name: { $regex: name, $options: "i" },
-    });
-    return {
-      count,
-      data: users,
-    };
-  } catch (error) {
-    throw new Error(error.message);
-  }
-};
-
-
-export const getUsersByLabelService = async (label) => {
-  try {
-    const validLabels = ["Work", "Friend", "Family"];
-    if (!validLabels.includes(label)) {
-      throw new Error("Invalid label");
-    }
-
-    const count = await phonebookUser.countDocuments({ label });
-    const users = await phonebookUser.find({ label });
-
-    return {
-      count,
-      data: users,
-    };
-  } catch (error) {
-    throw new Error(`Error fetching users by label: ${error.message}`);
-  }
-};
-
-
-
-// export const toggleBookmarkService = async (id) => {
-//     try {
-//         const contact = await phonebookUser.findById(id);
-//         if (!contact) {
-//             throw new Error('Contact not found');
-//         }
-//         contact.bookmark = !contact.bookmark;
-//         await contact.save();
-//         return contact;
-//     } catch (error) {
-//         throw new Error(error.message);
-//     }
-// };
-
-
 export const paginationService = async (req) => {
   const page = parseInt(req.query.page) || 1;
   const limit = parseInt(req.query.limit) || 10;
-
-  const lastIndex = page * limit;
-  const startIndex = lastIndex - limit;
+  const startIndex = (page - 1) * limit;
 
   try {
     const count = await phonebookUser.countDocuments();
-    const users = await phonebookUser.find()
-      .skip(startIndex)
-      .limit(limit)
+    const allContacts = await phonebookUser.find()
+      .sort({ bookmark: -1, name: 1 })
+      .skip(startIndex) 
+      .limit(limit);
 
-      
     const totalPages = Math.ceil(count / limit);
 
     return {
       currentPage: page,
       totalPages,
       totalCount: count,
-      data: users,
+      data: allContacts,
     };
   } catch (error) {
     throw new Error(`Error with pagination: ${error.message}`);
   }
 };
-
-
 
 

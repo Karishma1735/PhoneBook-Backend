@@ -23,12 +23,19 @@ const phonebookSchema = new mongoose.Schema({
         type: String,
     },
     label: {
-        type: String,
-        enum: {
-            values: ['Work', 'Friend', 'Family'],
-            message: (props) => `${props.value} is not a valid label". PLease enter valid label from Work , Family , Friend`,
-        },
+  type: String,
+  default: null,
+  validate: {
+    validator: function (value) {
+      if (!value) return true; 
+      const allowedLabels = ['Work', 'Friend', 'Family'];
+      return allowedLabels.includes(value);
     },
+    message: (props) =>
+      `${props.value} is not a valid label. Allowed values are Work, Friend, Family.`,
+  },
+},
+
     image: {
         type: String,
     },

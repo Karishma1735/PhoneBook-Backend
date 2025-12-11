@@ -3,6 +3,7 @@ import mongoose from 'mongoose';
 import userRoutes from './routes/userRoutes.js'
 import cors from 'cors'
 import dotenv from 'dotenv';
+import connectDB from './db.js';
 dotenv.config()
 const app = express();
 const port = 3000;
@@ -10,11 +11,13 @@ app.use(cors())
 app.use(express.json())
 
 
-const MONGODB_URI = "mongodb://localhost:27017/test"
+// const MONGODB_URI = "mongodb://localhost:27017/test"
 
-mongoose.connect(MONGODB_URI)
-.then(() => console.log('MongoDB connected successfully'))
-.catch(err => console.error('MongoDB connection error:', err));
+// mongoose.connect(MONGODB_URI)
+// .then(() => console.log('MongoDB connected successfully'))
+// .catch(err => console.error('MongoDB connection error:', err));
+
+connectDB()
 
 app.use('/',userRoutes)
 
@@ -51,10 +54,6 @@ app.get('/', (req, res) => {
                     route: "/edituser/:id",
                     description: "Updates a user's details by their unique id sent in params.and bookmark will be updated by sending the toogleBookmark=true in query params which will help in togglinf of bookmark"
                 },
-                // {
-                //     route: "/bookmark/:id",
-                //     description: "Bookmarks a user by their unique id send in params."
-                // }
             ],
             DELETE: [
                 {
