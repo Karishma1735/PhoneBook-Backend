@@ -8,14 +8,25 @@ export const createUser = async (req, res) => {
   const invalidFields = Object.keys(req.body).filter(key => !allowedFields.includes(key));
 
   if (invalidFields.length > 0) {
-    return res.status(400).send(`Invalid fields: ${invalidFields}`);
+    return res.status(400).json({ messages: [`Invalid fields: ${invalidFields.join(', ')}`] });
   }
 
   try {
     const newUser = await createUserService(req.body, req.file);
-    res.status(200).send(newUser);
+    return res.status(201).json(newUser);
+
   } catch (error) {
-    res.status(500).send(error.message);
+    if (error.code === 11000) {
+      return res.status(400).json({
+        messages: ["Please enter unique contact number !!! Current number already exists."]
+      });
+    }
+    if (error.name === "ValidationError") {
+      const messages = Object.values(error.errors).map(e => e.message);
+      return res.status(400).json({ messages });
+    }
+
+    return res.status(500).json({ messages: [error.message || "Something went wrong!"] });
   }
 };
 

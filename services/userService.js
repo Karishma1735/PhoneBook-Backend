@@ -110,11 +110,19 @@ export const paginationService = async (req) => {
   const page = parseInt(req.query.page) || 1;
   const limit = parseInt(req.query.limit) || 10;
   const startIndex = (page - 1) * limit;
+  const filter = {};
+  if (req.query.name) {
+    filter.name = { $regex: req.query.name, $options: "i" }; 
+  }
+  if (req.query.label) {
+    filter.label = req.query.label;
+  }
 
   try {
-    const count = await phonebookUser.countDocuments();
-    const allContacts = await phonebookUser.find()
+    const count = await phonebookUser.countDocuments(filter);
+    const allContacts = await phonebookUser.find(filter)      
       .sort({ bookmark: -1, name: 1 })
+      .collation({ locale: "en", strength: 2 }) 
       .skip(startIndex) 
       .limit(limit);
 
@@ -130,5 +138,6 @@ export const paginationService = async (req) => {
     throw new Error(`Error with pagination: ${error.message}`);
   }
 };
+
 
 
